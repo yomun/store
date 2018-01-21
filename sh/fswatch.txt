@@ -1,0 +1,42 @@
+1) 编译与安装
+
+$ apt-get install build-essential       # Debian/Ubuntu
+$ yum group install 'Development Tools' # CentOS/RHEL
+$ dnf group install 'Development Tools'	# Fedora 22+
+
+$ wget https://github.com/emcrisostomo/fswatch/releases/download/1.10.1/fswatch-1.10.1.tar.gz
+$ tar -xvzf fswatch-1.10.1.tar.gz
+
+$ cd fswatch*
+$ ./configure
+$ make
+$ sudo make install
+
+2) Fix 问题
+
+# fswatch: error while loading shared libraries: libfswatch.so.6: 
+# cannot open shared object file: No such file or directory
+$ sudo ldconfig
+
+3) fswatch
+
+查看监控工具
+$ fswatch -M
+$ fswatch --list-monitors
+
+监控 (每４秒)
+$ fswatch -l 4 . 
+$ fswatch -l 4 /var/log/auth.log
+
+$ fswatch -1 /home/xxx/Downloads
+
+# -t 或q--timestamp 打印时间戳每个事件
+# -u 或 --utf-time 打印UTC格式的时间
+# -f 或 --format-time 格式化时间
+# -x 或 --event-flags 告诉 fswatch 打印的事件标志的旁边事件路径
+# -n 或 --numeric 要打印显示在你的主目录, 并/var/log/auth.log 文件更改事件的数值
+$ fswatch --timestamp /var/log/auth.log
+$ fswatch --events-flags ~ /var/log/auth.log
+$ fswatch --numeric ~ /var/log/auth.log
+
+-----------------------------------------------

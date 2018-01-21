@@ -1,0 +1,132 @@
+https://github.com/hwdsl2/setup-ipsec-vpn
+
+1) 安装
+
+$ su
+
+# Ubuntu & Debian
+$ apt install strongswan xl2tpd
+
+# CentOS & RHEL
+$ yum install epel-release
+$ yum install strongswan xl2tpd
+
+# Fedora
+$ dnf install strongswan xl2tpd
+
+2) 设置
+
+2.1) strongSwan
+
+$ gedit /etc/ipsec.conf
+
+config setup
+
+conn %default
+  ikelifetime=60m
+  keylife=20m
+  rekeymargin=3m
+  keyingtries=1
+  keyexchange=ikev1
+  authby=secret
+  ike=aes128-sha1-modp1024,3des-sha1-modp1024!
+  esp=aes128-sha1-modp1024,3des-sha1-modp1024!
+
+conn myvpn
+  keyexchange=ikev1
+  left=%defaultroute
+  auto=add
+  authby=secret
+  type=transport
+  leftprotoport=17/1701
+  rightprotoport=17/1701
+  right=${VPN_SERVER_IP}
+
+$ gedit /etc/ipsec.secrets
+: PSK "vpn"
+
+$ chmod 600 /etc/ipsec.secrets
+
+# For CentOS/RHEL & Fedora ONLY
+mv /etc/strongswan/ipsec.conf /etc/strongswan/ipsec.conf.old 2>/dev/null
+mv /etc/strongswan/ipsec.secrets /etc/strongswan/ipsec.secrets.old 2>/dev/null
+ln -s /etc/ipsec.conf /etc/strongswan/ipsec.conf
+ln -s /etc/ipsec.secrets /etc/strongswan/ipsec.secrets
+
+2.2) xl2tpd
+
+$ gedit /etc/xl2tpd/xl2tpd.conf
+
+[lac myvpn]
+lns = ${VPN_SERVER_IP}
+ppp debug = yes
+pppoptfile = /etc/ppp/options.l2tpd.client
+length bit = yes
+
+$ gedit /etc/ppp/options.l2tpd.client
+
+ipcp-accept-local
+ipcp-accept-remote
+refuse-eap
+require-chap
+noccp
+noauth
+mtu 1280
+mru 1280
+noipdefault
+defaultroute
+usepeerdns
+connect-delay 5000
+name vpn
+password vpn
+
+$ chmod 600 /etc/ppp/options.l2tpd.client
+
+3) 连接
+
+创建 xl2tpd 控制文件
+
+$ mkdir -p /var/run/xl2tpd
+$ touch /var/run/xl2tpd/l2tp-control
+
+重启服务
+
+$ service strongswan restart
+$ service xl2tpd restart
+
+开始 IPsec 连接
+
+# Ubuntu & Debian
+$ ipsec up myvpn
+
+# CentOS/RHEL & Fedora
+$ strongswan up myvpn
+
+开始 L2TP 连接
+
+$ echo "c myvpn" > /var/run/xl2tpd/l2tp-control
+
+4) 设置
+
+$ ip route | grep 'default via' | awk '{print $3}'
+
+从新的默认路由中排除你的 VPN 服务器 IP （替换为你自己的值）
+$ route add <YOUR_VPN_SERVER_IP> gw X.X.X.X
+
+添加一个新的默认路由，并且开始通过 VPN 服务器发送数据
+$ route add default dev ppp0
+
+5) 断开
+
+要停止通过 VPN 服务器发送数据
+$ route del default dev ppp0
+
+要断开连接
+
+# Ubuntu & Debian
+$ echo "d myvpn" > /var/run/xl2tpd/l2tp-control
+$ ipsec down myvpn
+
+# CentOS/RHEL & Fedora
+$ echo "d myvpn" > /var/run/xl2tpd/l2tp-control
+$ strongswan down myvpn
