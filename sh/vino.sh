@@ -91,11 +91,11 @@ then
 
 elif [ `echo ${OS_RELEASE} | grep y-c "mageia"` -gt 0 ]
 then
-
+	echo ""
 elif [ `echo ${OS_RELEASE} | grep -c "manjaro"` -gt 0 ] || [ `echo ${OS_RELEASE} | grep -c "antergos"` -gt 0 ]
 then
-
+	echo ""
 elif [ `echo ${OS_RELEASE} | grep -c "solus"` -gt 0 ]
 then
-
+	echo ""
 fi
